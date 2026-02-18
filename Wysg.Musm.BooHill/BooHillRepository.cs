@@ -964,6 +964,37 @@ AND cluster_id NOT IN (SELECT cluster_id FROM cluster)";
         await command.ExecuteNonQueryAsync().ConfigureAwait(false);
     }
 
+    public async Task<int> GetOrCreateClusterIdAsync(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return 1;
+        }
+
+        var trimmed = name.Trim();
+        await using var connection = CreateConnection();
+        await connection.OpenAsync().ConfigureAwait(false);
+
+        await using (var find = connection.CreateCommand())
+        {
+            find.CommandText = "SELECT cluster_id FROM cluster WHERE name = $name LIMIT 1";
+            find.Parameters.AddWithValue("$name", trimmed);
+            var found = await find.ExecuteScalarAsync().ConfigureAwait(false);
+            if (found != null && found != DBNull.Value)
+            {
+                return Convert.ToInt32(found, CultureInfo.InvariantCulture);
+            }
+        }
+
+        await using (var insert = connection.CreateCommand())
+        {
+            insert.CommandText = "INSERT INTO cluster (name) VALUES ($name); SELECT last_insert_rowid();";
+            insert.Parameters.AddWithValue("$name", trimmed);
+            var scalar = await insert.ExecuteScalarAsync().ConfigureAwait(false);
+            return Convert.ToInt32(scalar, CultureInfo.InvariantCulture);
+        }
+    }
+
     private static object DbValue(object? value)
     {
         return value ?? DBNull.Value;

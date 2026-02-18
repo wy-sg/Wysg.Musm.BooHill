@@ -199,7 +199,8 @@ public sealed partial class BulkImportWindow : Window
 
         foreach (var house in ParsedHouses.ToList())
         {
-            var newId = await repo.InsertHouseWithItemsAsync(house, _today).ConfigureAwait(false);
+            var clusterId = await repo.GetOrCreateClusterIdAsync(house.ClusterName).ConfigureAwait(false);
+            var newId = await repo.InsertHouseWithItemsAsync(house, _today, clusterId).ConfigureAwait(false);
             insertedHouses++;
             insertedItems += house.Items.Count;
         }

@@ -6,6 +6,8 @@
 
 1. 메인 창 필터에 **비고** 텍스트 검색 필터를 추가했습니다.
 2. 새로 생성된 DB에서 **단지** 필터가 작동하지 않는 문제를 수정했습니다.
+3. 한꺼번에 가져오기에서 파싱된 단지 이름(예: "남천자이")을 `cluster` 테이블에
+   자동으로 생성하고 `house`에 연결하도록 수정했습니다.
 
 ## 변경 1: 비고 텍스트 필터
 
@@ -26,8 +28,21 @@
 항목이 표시되지 않았습니다.
 
 ### 해결
-`EnsureClustersFromHousesAsync` 메서드를 추가하여 앱 초기화 시 `house` 테이블의
-`cluster_id` 중 `cluster` 테이블에 없는 값을 자동으로 생성합니다.
+- `EnsureClustersFromHousesAsync` 메서드를 추가하여 앱 초기화 시 `house` 테이블의
+  `cluster_id` 중 `cluster` 테이블에 없는 값을 자동으로 생성합니다.
+
+## 변경 3: 한꺼번에 가져오기 시 단지 이름 반영
+
+### 문제
+파서가 단지 이름(예: "남천자이")을 `BulkParsedHouse.ClusterName`에 저장하지만,
+`FinalizeNew_Click`에서 `InsertHouseWithItemsAsync`를 호출할 때 단지 이름을
+`cluster_id`로 변환하지 않아 기본값(`1`)이 사용되었습니다.
+
+### 해결
+- `GetOrCreateClusterIdAsync(string? name)` 메서드를 추가: 이름으로 기존 클러스터를
+  검색하거나 없으면 새로 생성하고 `cluster_id`를 반환합니다.
+- `FinalizeNew_Click`에서 각 파싱된 매물의 `ClusterName`을 `cluster_id`로 변환한 후
+  `InsertHouseWithItemsAsync`에 전달합니다.
 
 ## Changes
 
@@ -43,4 +58,8 @@
 ### `BooHillRepository.cs`
 - `GetHousesAsync`: `RemarkText` 필터 시 `EXISTS (SELECT 1 FROM item ... remark LIKE ...)` WHERE 절 추가
 - `EnsureClustersFromHousesAsync`: `house`에 존재하지만 `cluster`에 없는 `cluster_id` 레코드를 `INSERT OR IGNORE`
+- `GetOrCreateClusterIdAsync`: 이름으로 클러스터 검색/생성 후 `cluster_id` 반환
 - `CreateAsync`: `EnsureClustersFromHousesAsync` 호출 추가
+
+### `BulkImportWindow.xaml.cs`
+- `FinalizeNew_Click`: `GetOrCreateClusterIdAsync`로 단지 이름을 ID로 변환 후 삽입

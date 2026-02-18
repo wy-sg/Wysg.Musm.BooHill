@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -497,6 +498,135 @@ namespace Wysg.Musm.BooHill
         private T? FindControl<T>(string name) where T : class
         {
             return (Content as FrameworkElement)?.FindName(name) as T;
+        }
+
+        private async void EditHouse_Click(object sender, RoutedEventArgs e)
+        {
+            if (_repository == null)
+            {
+                return;
+            }
+
+            if (sender is not Button button || button.Tag is not long houseId)
+            {
+                return;
+            }
+
+            var house = Houses.FirstOrDefault(h => h.HouseId == houseId);
+            if (house == null)
+            {
+                return;
+            }
+
+            var edit = new HouseEdit
+            {
+                HouseId = house.HouseId,
+                ClusterId = house.ClusterId,
+                BuildingNumber = house.BuildingNumber,
+                UnitNumber = house.UnitNumber,
+                Area = house.Area,
+                Direction = house.Direction,
+                IsSold = house.IsSold,
+                IsFavorite = house.IsFavorite,
+                Value = house.Value,
+                ValueEstimate = house.ValueEstimate,
+                Rank = house.Rank,
+                RankEstimate = house.RankEstimate,
+                Tags = house.Tags
+            };
+
+            var saved = await ShowEditHouseDialogAsync(edit);
+            if (saved)
+            {
+                try
+                {
+                    await _repository.UpsertHouseAsync(edit);
+                    await LoadHousesAsync(_currentFilters);
+                }
+                catch (Exception ex)
+                {
+                    await ShowErrorAsync("저장 실패", ex.Message);
+                }
+            }
+        }
+
+        private async Task<bool> ShowEditHouseDialogAsync(HouseEdit edit)
+        {
+            var clusterBox = new ComboBox
+            {
+                ItemsSource = Clusters,
+                DisplayMemberPath = "Display",
+                SelectedValuePath = "ClusterId",
+                SelectedValue = edit.ClusterId,
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            };
+
+            var buildingBox = new TextBox { Text = edit.BuildingNumber, PlaceholderText = "동" };
+            var unitBox = new TextBox { Text = edit.UnitNumber, PlaceholderText = "호수" };
+            var areaBox = new TextBox { Text = edit.Area, PlaceholderText = "평수" };
+            var directionBox = new TextBox { Text = edit.Direction, PlaceholderText = "향" };
+            var soldCheck = new CheckBox { Content = "거래 완료", IsChecked = edit.IsSold };
+            var favoriteCheck = new CheckBox { Content = "관심", IsChecked = edit.IsFavorite };
+            var valueBox = new TextBox { Text = edit.Value?.ToString(CultureInfo.InvariantCulture) ?? string.Empty, PlaceholderText = "감평액" };
+            var valueEstBox = new TextBox { Text = edit.ValueEstimate?.ToString(CultureInfo.InvariantCulture) ?? string.Empty, PlaceholderText = "감평액 추정" };
+            var rankBox = new TextBox { Text = edit.Rank?.ToString(CultureInfo.InvariantCulture) ?? string.Empty, PlaceholderText = "순위" };
+            var rankEstBox = new TextBox { Text = edit.RankEstimate?.ToString(CultureInfo.InvariantCulture) ?? string.Empty, PlaceholderText = "순위 추정" };
+            var tagsBox = new TextBox { Text = edit.Tags, PlaceholderText = "태그" };
+
+            var panel = new StackPanel { Spacing = 8 };
+            panel.Children.Add(new TextBlock { Text = "단지" });
+            panel.Children.Add(clusterBox);
+            panel.Children.Add(new TextBlock { Text = "동" });
+            panel.Children.Add(buildingBox);
+            panel.Children.Add(new TextBlock { Text = "호수" });
+            panel.Children.Add(unitBox);
+            panel.Children.Add(new TextBlock { Text = "평수" });
+            panel.Children.Add(areaBox);
+            panel.Children.Add(new TextBlock { Text = "향" });
+            panel.Children.Add(directionBox);
+            panel.Children.Add(soldCheck);
+            panel.Children.Add(favoriteCheck);
+            panel.Children.Add(new TextBlock { Text = "감평액" });
+            panel.Children.Add(valueBox);
+            panel.Children.Add(new TextBlock { Text = "감평액 추정" });
+            panel.Children.Add(valueEstBox);
+            panel.Children.Add(new TextBlock { Text = "순위" });
+            panel.Children.Add(rankBox);
+            panel.Children.Add(new TextBlock { Text = "순위 추정" });
+            panel.Children.Add(rankEstBox);
+            panel.Children.Add(new TextBlock { Text = "태그" });
+            panel.Children.Add(tagsBox);
+
+            var dialog = new ContentDialog
+            {
+                Title = "물건 편집",
+                Content = new ScrollViewer { Content = panel, MaxHeight = 500 },
+                PrimaryButtonText = "저장",
+                CloseButtonText = "취소",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = (Content as FrameworkElement)?.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+            {
+                return false;
+            }
+
+            edit.ClusterId = clusterBox.SelectedValue is int cid ? cid : edit.ClusterId;
+            edit.BuildingNumber = buildingBox.Text.Trim();
+            edit.UnitNumber = unitBox.Text.Trim();
+            edit.Area = areaBox.Text.Trim();
+            edit.Direction = directionBox.Text.Trim();
+            edit.IsSold = soldCheck.IsChecked == true;
+            edit.IsFavorite = favoriteCheck.IsChecked == true;
+            edit.Value = TryParseDouble(valueBox.Text);
+            edit.ValueEstimate = TryParseDouble(valueEstBox.Text);
+            edit.Rank = TryParseDouble(rankBox.Text);
+            edit.RankEstimate = TryParseDouble(rankEstBox.Text);
+            edit.Tags = tagsBox.Text.Trim();
+
+            return true;
         }
 
         private async void HouseExpander_Expanding(Expander sender, ExpanderExpandingEventArgs args)

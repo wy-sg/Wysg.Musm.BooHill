@@ -173,18 +173,19 @@
                 <Grid Padding="12" ColumnSpacing="8" VerticalAlignment="Center" Background="{ThemeResource LayerFillColorAltBrush}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="93" />
-                        <ColumnDefinition Width="120" />
-                        <ColumnDefinition Width="120" />
+                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="80" />
                         <ColumnDefinition Width="80" />
                         <ColumnDefinition Width="60" />
                         <ColumnDefinition Width="50" />
                         <ColumnDefinition Width="60" />
                         <ColumnDefinition Width="300" />
-                        <ColumnDefinition Width="120" />
+                        <ColumnDefinition Width="80" />
                         <ColumnDefinition Width="200" />
-                        <ColumnDefinition Width="120" />
+                        <ColumnDefinition Width="70" />
                         <ColumnDefinition Width="120" />
                         <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="60" />
                     </Grid.ColumnDefinitions>
                     <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" Text="ID" FontWeight="SemiBold" />
                     <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Text="동" FontWeight="SemiBold" />
@@ -199,6 +200,7 @@
                     <TextBlock Grid.Column="10" VerticalAlignment="Center" HorizontalAlignment="Center" Text="순위" FontWeight="SemiBold" />
                     <TextBlock Grid.Column="11" VerticalAlignment="Center" HorizontalAlignment="Center" Text="태그" FontWeight="SemiBold" />
                     <TextBlock Grid.Column="12" VerticalAlignment="Center" HorizontalAlignment="Center" Text="거래 완료" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="13" VerticalAlignment="Center" HorizontalAlignment="Center" Text="편집" FontWeight="SemiBold" />
                 </Grid>
 
                 <ScrollViewer Grid.Row="1">
@@ -210,18 +212,19 @@
                                         <Grid Padding="0" ColumnSpacing="8" Background="{ThemeResource LayerFillColorDefaultBrush}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="70" />
-                                            <ColumnDefinition Width="120" />
-                                            <ColumnDefinition Width="120" />
+                                            <ColumnDefinition Width="80" />
+                                            <ColumnDefinition Width="80" />
                                             <ColumnDefinition Width="80" />
                                             <ColumnDefinition Width="60" />
                                             <ColumnDefinition Width="50" />
                                             <ColumnDefinition Width="60" />
                                             <ColumnDefinition Width="300" />
-                                            <ColumnDefinition Width="120" />
+                                            <ColumnDefinition Width="80" />
                                             <ColumnDefinition Width="200" />
-                                            <ColumnDefinition Width="120" />
+                                            <ColumnDefinition Width="70" />
                                             <ColumnDefinition Width="120" />
                                             <ColumnDefinition Width="80" />
+                                            <ColumnDefinition Width="60" />
                                         </Grid.ColumnDefinitions>
                                             <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding HouseId}" />
                                             <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding BuildingNumber}" />
@@ -239,6 +242,7 @@
                                             <TextBlock Grid.Column="10" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding RankDisplay}" />
                                             <TextBlock Grid.Column="11" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding Tags}" TextTrimming="CharacterEllipsis" />
                                             <Button Grid.Column="12" VerticalAlignment="Center" HorizontalAlignment="Center" Content="{Binding SoldGlyph}" Click="Sold_Click" Tag="{Binding HouseId}" />
+                                            <Button Grid.Column="13" VerticalAlignment="Center" HorizontalAlignment="Center" Content="편집" Click="EditHouse_Click" Tag="{Binding HouseId}" />
                                         </Grid>
                                     </Expander.Header>
                                     <ItemsControl ItemsSource="{Binding ItemsForDisplayGroups}">

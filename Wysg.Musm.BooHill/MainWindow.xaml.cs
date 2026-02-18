@@ -37,6 +37,7 @@ namespace Wysg.Musm.BooHill
         private TextBox? _maxValueBox;
         private TextBox? _minRankBox;
         private TextBox? _maxRankBox;
+        private TextBox? _remarkTextBox;
 
         public ObservableCollection<HouseView> Houses { get; } = new();
         public ObservableCollection<ClusterRecord> Clusters { get; } = new();
@@ -108,7 +109,7 @@ namespace Wysg.Musm.BooHill
 
                 if (_statusText != null)
                 {
-                    _statusText.Text = Houses.Count == 0 ? "No listings found." : $"Showing {Houses.Count} listings.";
+                    _statusText.Text =  $"결과 물건\n{Houses.Count}개";
                 }
             }
             catch (Exception ex)
@@ -164,6 +165,7 @@ namespace Wysg.Musm.BooHill
             if (_maxValueBox != null) _maxValueBox.Text = string.Empty;
             if (_minRankBox != null) _minRankBox.Text = string.Empty;
             if (_maxRankBox != null) _maxRankBox.Text = string.Empty;
+            if (_remarkTextBox != null) _remarkTextBox.Text = string.Empty;
 
             _currentFilters = new FilterOptions();
             UpdateSortButtonLabels();
@@ -215,6 +217,7 @@ namespace Wysg.Musm.BooHill
                 MaxValue = TryParseDouble(NormalizeInput(_maxValueBox?.Text)),
                 MinRank = TryParseDouble(NormalizeInput(_minRankBox?.Text)),
                 MaxRank = TryParseDouble(NormalizeInput(_maxRankBox?.Text)),
+                RemarkText = NormalizeInput(_remarkTextBox?.Text),
                 SortColumns = new List<SortColumn>(_currentFilters.SortColumns)
             };
         }
@@ -406,6 +409,7 @@ namespace Wysg.Musm.BooHill
             _maxValueBox = FindControl<TextBox>("MaxValueBox");
             _minRankBox = FindControl<TextBox>("MinRankBox");
             _maxRankBox = FindControl<TextBox>("MaxRankBox");
+            _remarkTextBox = FindControl<TextBox>("RemarkTextBox");
 
             if (_rootGrid != null)
             {

@@ -109,20 +109,27 @@
                     </Button>
                 </StackPanel>
 
-                <StackPanel Spacing="4" Grid.Column="7" VerticalAlignment="Bottom">
+                <StackPanel Spacing="2" Grid.Column="7">
+                    <TextBlock Text="키워드" FontSize="12" />
+                    <TextBox x:Name="RemarkTextBox" PlaceholderText="예: 급매" Width="100" />
+                </StackPanel>               
+
+                <StackPanel Spacing="4" Grid.Column="8" VerticalAlignment="Bottom">
                     <CheckBox x:Name="FavoriteOnlyCheck" Content="관심" />
                 </StackPanel>
 
-                <StackPanel Spacing="4" Grid.Column="8" VerticalAlignment="Bottom">
+                <StackPanel Spacing="4" Grid.Column="9" VerticalAlignment="Bottom">
                     <CheckBox x:Name="ShowSoldCheck" Content="거래" />
                 </StackPanel>
 
-                <StackPanel Spacing="8" Grid.Column="9" Orientation="Horizontal" VerticalAlignment="Bottom">
+                <TextBlock x:Name="StatusText" Grid.Column="10" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                
+                <StackPanel Spacing="8" Grid.Column="11" Orientation="Horizontal" VerticalAlignment="Bottom">
                     <Button Content="적용" Click="ApplyFilters_Click" />
                     <Button Content="초기화" Click="ClearFilters_Click" />
                 </StackPanel>
 
-                <TextBlock x:Name="StatusText" Grid.Column="11" VerticalAlignment="Center" HorizontalAlignment="Right" />
+               
             </Grid>
             <TextBlock Text="정렬" FontSize="18" FontWeight="SemiBold" />
             <StackPanel Orientation="Horizontal" Spacing="6">

@@ -16,6 +16,7 @@ public sealed class FilterOptions
     public double? MaxValue { get; set; }
     public double? MinRank { get; set; }
     public double? MaxRank { get; set; }
+    public string? RemarkText { get; set; }
     public List<SortColumn> SortColumns { get; set; } = new();
 }
 

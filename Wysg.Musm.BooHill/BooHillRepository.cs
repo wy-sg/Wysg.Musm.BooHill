@@ -27,6 +27,7 @@ public sealed class BooHillRepository
         var repo = new BooHillRepository(dbPath);
         await repo.EnsureAreaPatchedAsync();
         await repo.EnsureTagsColumnAsync();
+        await repo.EnsureClustersFromHousesAsync();
         return repo;
     }
 
@@ -212,6 +213,12 @@ public sealed class BooHillRepository
                 command.Parameters.AddWithValue(name, filters.Tags[i]);
             }
             whereClauses.Add($"({string.Join(" OR ", tagClauses)})");
+        }
+
+        if (!string.IsNullOrEmpty(filters.RemarkText))
+        {
+            whereClauses.Add("EXISTS (SELECT 1 FROM item WHERE item.house_id = h.house_id AND item.remark LIKE '%' || $remarkText || '%')");
+            command.Parameters.AddWithValue("$remarkText", filters.RemarkText);
         }
 
         var orderParts = new List<string>();
@@ -944,6 +951,17 @@ VALUES ($house_id, $price, $office, $last_updated_date, $added_date, $remark);";
         await using var alter = connection.CreateCommand();
         alter.CommandText = "ALTER TABLE house ADD COLUMN tags TEXT";
         await alter.ExecuteNonQueryAsync().ConfigureAwait(false);
+    }
+
+    private async Task EnsureClustersFromHousesAsync()
+    {
+        await using var connection = CreateConnection();
+        await connection.OpenAsync().ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"INSERT OR IGNORE INTO cluster (cluster_id)
+SELECT DISTINCT cluster_id FROM house WHERE cluster_id IS NOT NULL
+AND cluster_id NOT IN (SELECT cluster_id FROM cluster)";
+        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
     }
 
     private static object DbValue(object? value)

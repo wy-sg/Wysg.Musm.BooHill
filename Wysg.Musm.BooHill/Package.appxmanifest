@@ -11,12 +11,12 @@
   <Identity
     Name="05f8d358-2d86-45dc-af39-90bb70ec1824"
     Publisher="CN=wysg"
-    Version="1.0.0.0" />
+    Version="1.0.1.0" />
 
   <mp:PhoneIdentity PhoneProductId="05f8d358-2d86-45dc-af39-90bb70ec1824" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>Wysg.Musm.BooHill</DisplayName>
+    <DisplayName>부유한 언덕 아파트</DisplayName>
     <PublisherDisplayName>wysg</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -35,12 +35,12 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="Wysg.Musm.BooHill"
-        Description="Wysg.Musm.BooHill"
+        DisplayName="부유한 언덕 아파트"
+        Description="부유한 언덕 아파트"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">
-        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png"  Square71x71Logo="Assets\SmallTile.png" Square310x310Logo="Assets\LargeTile.png"/>
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
     </Application>

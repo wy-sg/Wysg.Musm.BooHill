@@ -30,7 +30,6 @@
     <Content Include="Assets\Square150x150Logo.scale-200.png" />
     <Content Include="Assets\Square44x44Logo.scale-200.png" />
     <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
-    <Content Include="Assets\StoreLogo.png" />
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
 
@@ -67,6 +66,8 @@
     <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
     <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
     <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
+    <DefaultLanguage>ko-KR</DefaultLanguage>
+    <Title>부유한 언덕 아파트</Title>
   </PropertyGroup>
   <ItemGroup>
     <PRIResource Remove="docs\boohill\**" />
@@ -79,6 +80,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Update="BulkImportWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
+    <None Update="InfoWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>
   </ItemGroup>

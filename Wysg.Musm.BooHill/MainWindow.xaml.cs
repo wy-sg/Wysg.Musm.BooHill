@@ -184,6 +184,12 @@ namespace Wysg.Musm.BooHill
             window.Activate();
         }
 
+        private void OpenInfo_Click(object sender, RoutedEventArgs e)
+        {
+            var window = new InfoWindow();
+            window.Activate();
+        }
+
         private FilterOptions ReadFiltersFromUi()
         {
             int? selectedClusterId = null;

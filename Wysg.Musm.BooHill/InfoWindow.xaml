@@ -17,7 +17,7 @@
 
             <!-- 앱 제목 / 버전 -->
             <TextBlock Text="부유한 언덕-아파트" FontSize="26" FontWeight="Bold" />
-            <TextBlock Text="버전 v 1.01" FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <TextBlock Text="버전 v 1.0.1" FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
 
             <Rectangle Height="1" Fill="{ThemeResource ControlStrokeColorDefaultBrush}" />
 

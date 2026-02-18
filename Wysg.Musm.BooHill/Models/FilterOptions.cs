@@ -9,6 +9,7 @@ public sealed class FilterOptions
     public List<string>? BuildingNumbers { get; set; }
     public List<string>? UnitNumbers { get; set; }
     public List<string>? Areas { get; set; }
+    public List<string>? Directions { get; set; }
     public bool ShowSold { get; set; }
     public bool FavoriteOnly { get; set; }
     public List<string>? Tags { get; set; }
@@ -32,6 +33,7 @@ public enum SortField
     Building,
     Unit,
     Area,
+    Direction,
     Favorite,
     Office,
     PriceRange,

@@ -31,6 +31,8 @@ namespace Wysg.Musm.BooHill
         private ListView? _areaFilterList;
         private Button? _tagFilterButton;
         private ListView? _tagFilterList;
+        private Button? _directionFilterButton;
+        private ListView? _directionFilterList;
         private CheckBox? _favoriteOnlyCheck;
         private CheckBox? _showSoldCheck;
         private TextBox? _minValueBox;
@@ -158,6 +160,7 @@ namespace Wysg.Musm.BooHill
             ClearMultiSelect(_buildingFilterList, _buildingFilterButton);
             ClearMultiSelect(_unitFilterList, _unitFilterButton);
             ClearMultiSelect(_areaFilterList, _areaFilterButton);
+            ClearMultiSelect(_directionFilterList, _directionFilterButton);
             ClearMultiSelect(_tagFilterList, _tagFilterButton);
             if (_favoriteOnlyCheck != null) _favoriteOnlyCheck.IsChecked = false;
             if (_showSoldCheck != null) _showSoldCheck.IsChecked = false;
@@ -210,6 +213,7 @@ namespace Wysg.Musm.BooHill
                 BuildingNumbers = GetSelectedStrings(_buildingFilterList),
                 UnitNumbers = GetSelectedStrings(_unitFilterList),
                 Areas = GetSelectedStrings(_areaFilterList),
+                Directions = GetSelectedStrings(_directionFilterList),
                 Tags = GetSelectedStrings(_tagFilterList),
                 FavoriteOnly = _favoriteOnlyCheck?.IsChecked == true,
                 ShowSold = _showSoldCheck?.IsChecked == true,
@@ -338,6 +342,7 @@ namespace Wysg.Musm.BooHill
             { SortField.Building, "동" },
             { SortField.Unit, "호수" },
             { SortField.Area, "평" },
+            { SortField.Direction, "향" },
             { SortField.Favorite, "관심" },
             { SortField.Office, "부동산" },
             { SortField.PriceRange, "가격 범위" },
@@ -378,6 +383,7 @@ namespace Wysg.Musm.BooHill
                 SortField.Building => FindControl<Button>("SortBuildingBtn"),
                 SortField.Unit => FindControl<Button>("SortUnitBtn"),
                 SortField.Area => FindControl<Button>("SortAreaBtn"),
+                SortField.Direction => FindControl<Button>("SortDirectionBtn"),
                 SortField.Favorite => FindControl<Button>("SortFavoriteBtn"),
                 SortField.Office => FindControl<Button>("SortOfficeBtn"),
                 SortField.PriceRange => FindControl<Button>("SortPriceBtn"),
@@ -403,6 +409,8 @@ namespace Wysg.Musm.BooHill
             _areaFilterList = FindControl<ListView>("AreaFilterList");
             _tagFilterButton = FindControl<Button>("TagFilterButton");
             _tagFilterList = FindControl<ListView>("TagFilterList");
+            _directionFilterButton = FindControl<Button>("DirectionFilterButton");
+            _directionFilterList = FindControl<ListView>("DirectionFilterList");
             _favoriteOnlyCheck = FindControl<CheckBox>("FavoriteOnlyCheck");
             _showSoldCheck = FindControl<CheckBox>("ShowSoldCheck");
             _minValueBox = FindControl<TextBox>("MinValueBox");
@@ -428,11 +436,13 @@ namespace Wysg.Musm.BooHill
             var units = await _repository.GetDistinctUnitNumbersAsync();
             var areas = await _repository.GetDistinctAreasAsync();
             var tags = await _repository.GetDistinctTagsAsync();
+            var directions = await _repository.GetDistinctDirectionsAsync();
 
             if (_buildingFilterList != null) _buildingFilterList.ItemsSource = buildings;
             if (_unitFilterList != null) _unitFilterList.ItemsSource = units;
             if (_areaFilterList != null) _areaFilterList.ItemsSource = areas;
             if (_tagFilterList != null) _tagFilterList.ItemsSource = tags;
+            if (_directionFilterList != null) _directionFilterList.ItemsSource = directions;
         }
 
         private void BuildingFlyout_Closed(object sender, object e)
@@ -453,6 +463,11 @@ namespace Wysg.Musm.BooHill
         private void TagFlyout_Closed(object sender, object e)
         {
             UpdateMultiSelectButtonText(_tagFilterList, _tagFilterButton);
+        }
+
+        private void DirectionFlyout_Closed(object sender, object e)
+        {
+            UpdateMultiSelectButtonText(_directionFilterList, _directionFilterButton);
         }
 
         private static void UpdateMultiSelectButtonText(ListView? listView, Button? button)

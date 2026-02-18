@@ -21,6 +21,7 @@ public sealed class HouseEdit
     public double? Rank { get; set; }
     public double? RankEstimate { get; set; }
     public string Tags { get; set; } = string.Empty;
+    public string Direction { get; set; } = string.Empty;
 }
 
 public sealed class ItemRecord
@@ -134,6 +135,7 @@ public sealed class HouseView
     public long ItemTodayMatch { get; set; }
     public bool IsNewToday { get; set; }
     public string Tags { get; set; } = string.Empty;
+    public string Direction { get; set; } = string.Empty;
 
     public ObservableCollection<ItemRecord> Items { get; } = new();
 

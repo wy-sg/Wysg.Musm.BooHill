@@ -27,6 +27,7 @@ public sealed class BooHillRepository
         var repo = new BooHillRepository(dbPath);
         await repo.EnsureAreaPatchedAsync();
         await repo.EnsureTagsColumnAsync();
+        await repo.EnsureDirectionColumnAsync();
         await repo.EnsureClustersFromHousesAsync();
         return repo;
     }
@@ -80,7 +81,8 @@ public sealed class BooHillRepository
                 value_estm      REAL,
                 rank            REAL,
                 rank_estm       REAL,
-                tags            TEXT
+                tags            TEXT,
+                direction       TEXT
             );
 
             CREATE TABLE IF NOT EXISTS item (
@@ -169,6 +171,18 @@ public sealed class BooHillRepository
             whereClauses.Add($"h.area IN ({string.Join(",", paramNames)})");
         }
 
+        if (filters.Directions?.Count > 0)
+        {
+            var paramNames = new List<string>();
+            for (var i = 0; i < filters.Directions.Count; i++)
+            {
+                var name = "$dr" + i.ToString(CultureInfo.InvariantCulture);
+                paramNames.Add(name);
+                command.Parameters.AddWithValue(name, filters.Directions[i]);
+            }
+            whereClauses.Add($"h.direction IN ({string.Join(",", paramNames)})");
+        }
+
         if (filters.MinValue.HasValue)
         {
             whereClauses.Add("h.value >= $minValue");
@@ -230,6 +244,7 @@ public sealed class BooHillRepository
                 SortField.Building => $"h.building_number COLLATE NOCASE {dir}",
                 SortField.Unit => $"h.unit_number COLLATE NOCASE {dir}",
                 SortField.Area => $"h.area COLLATE NOCASE {dir}",
+                SortField.Direction => $"h.direction COLLATE NOCASE {dir}",
                 SortField.Favorite => $"h.is_favorite {dir}",
                 SortField.Office => $"item_total {dir}",
                 SortField.PriceRange => $"(min_price IS NULL) ASC, min_price {dir}, max_price {dir}",
@@ -257,7 +272,8 @@ public sealed class BooHillRepository
     (SELECT COUNT(*) FROM item WHERE item.house_id = h.house_id) AS item_total,
     (SELECT COUNT(*) FROM item WHERE item.house_id = h.house_id AND item.added_date = $today AND item.last_updated_date = $today) AS item_today_match,
     CASE WHEN EXISTS(SELECT 1 FROM item WHERE item.house_id = h.house_id AND item.added_date = $today) THEN 1 ELSE 0 END AS is_new_today,
-    COALESCE(h.tags, '') AS tags
+    COALESCE(h.tags, '') AS tags,
+    COALESCE(h.direction, '') AS direction
   FROM house h";
 
         if (whereClauses.Count > 0)
@@ -293,7 +309,8 @@ public sealed class BooHillRepository
                 ItemTotal = reader.IsDBNull(14) ? 0 : reader.GetInt64(14),
                 ItemTodayMatch = reader.IsDBNull(15) ? 0 : reader.GetInt64(15),
                 IsNewToday = !reader.IsDBNull(16) && reader.GetInt32(16) == 1,
-                Tags = reader.IsDBNull(17) ? string.Empty : reader.GetString(17)
+                Tags = reader.IsDBNull(17) ? string.Empty : reader.GetString(17),
+                Direction = reader.IsDBNull(18) ? string.Empty : reader.GetString(18)
             });
         }
 
@@ -356,8 +373,8 @@ public sealed class BooHillRepository
         await using var command = connection.CreateCommand();
         if (house.HouseId == 0)
         {
-            command.CommandText = @"INSERT INTO house (cluster_id, building_number, unit_number, area, is_sold, is_favorite, value, value_estm, rank, rank_estm, tags)
-VALUES ($cluster_id, $building_number, $unit_number, $area, $is_sold, $is_favorite, $value, $value_estm, $rank, $rank_estm, $tags);
+            command.CommandText = @"INSERT INTO house (cluster_id, building_number, unit_number, area, is_sold, is_favorite, value, value_estm, rank, rank_estm, tags, direction)
+VALUES ($cluster_id, $building_number, $unit_number, $area, $is_sold, $is_favorite, $value, $value_estm, $rank, $rank_estm, $tags, $direction);
 SELECT last_insert_rowid();";
         }
         else
@@ -373,7 +390,8 @@ SELECT last_insert_rowid();";
     value_estm = $value_estm,
     rank = $rank,
     rank_estm = $rank_estm,
-    tags = $tags
+    tags = $tags,
+    direction = $direction
 WHERE house_id = $house_id;
 SELECT $house_id;";
             command.Parameters.AddWithValue("$house_id", house.HouseId);
@@ -390,6 +408,7 @@ SELECT $house_id;";
         command.Parameters.AddWithValue("$rank", house.Rank.HasValue ? house.Rank.Value : DBNull.Value);
         command.Parameters.AddWithValue("$rank_estm", house.RankEstimate.HasValue ? house.RankEstimate.Value : DBNull.Value);
         command.Parameters.AddWithValue("$tags", string.IsNullOrWhiteSpace(house.Tags) ? DBNull.Value : house.Tags);
+        command.Parameters.AddWithValue("$direction", string.IsNullOrWhiteSpace(house.Direction) ? DBNull.Value : house.Direction);
 
         var result = await command.ExecuteScalarAsync().ConfigureAwait(false);
         return Convert.ToInt64(result, CultureInfo.InvariantCulture);
@@ -491,7 +510,8 @@ SELECT $house_id;";
     (SELECT COUNT(*) FROM item WHERE item.house_id = h.house_id) AS item_total,
     (SELECT COUNT(*) FROM item WHERE item.house_id = h.house_id AND item.added_date = $today AND item.last_updated_date = $today) AS item_today_match,
     CASE WHEN EXISTS(SELECT 1 FROM item WHERE item.house_id = h.house_id AND item.added_date = $today) THEN 1 ELSE 0 END AS is_new_today,
-    COALESCE(h.tags, '') AS tags
+    COALESCE(h.tags, '') AS tags,
+    COALESCE(h.direction, '') AS direction
   FROM house h";
 
         if (where.Count > 0)
@@ -531,7 +551,8 @@ SELECT $house_id;";
                     ItemTotal = reader.IsDBNull(14) ? 0 : reader.GetInt64(14),
                     ItemTodayMatch = reader.IsDBNull(15) ? 0 : reader.GetInt64(15),
                     IsNewToday = !reader.IsDBNull(16) && reader.GetInt32(16) == 1,
-                    Tags = reader.IsDBNull(17) ? string.Empty : reader.GetString(17)
+                    Tags = reader.IsDBNull(17) ? string.Empty : reader.GetString(17),
+                    Direction = reader.IsDBNull(18) ? string.Empty : reader.GetString(18)
                 });
             }
         }
@@ -759,6 +780,7 @@ VALUES ($house_id, $price, $office, $last_updated_date, $added_date, $remark);";
             BuildingNumber = house.BuildingNumber,
             UnitNumber = house.UnitNumber,
             Area = house.Area,
+            Direction = house.Direction,
             IsFavorite = false,
             IsSold = false,
             Value = null,
@@ -932,6 +954,32 @@ VALUES ($house_id, $price, $office, $last_updated_date, $added_date, $remark);";
         return results;
     }
 
+    public async Task<List<string>> GetDistinctDirectionsAsync(int? clusterId = null)
+    {
+        await using var connection = CreateConnection();
+        await connection.OpenAsync().ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.CommandText = clusterId.HasValue
+            ? "SELECT DISTINCT direction FROM house WHERE cluster_id = $cid AND direction IS NOT NULL ORDER BY direction COLLATE NOCASE"
+            : "SELECT DISTINCT direction FROM house WHERE direction IS NOT NULL ORDER BY direction COLLATE NOCASE";
+        if (clusterId.HasValue)
+        {
+            command.Parameters.AddWithValue("$cid", clusterId.Value);
+        }
+
+        var results = new List<string>();
+        await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
+        while (await reader.ReadAsync().ConfigureAwait(false))
+        {
+            if (!reader.IsDBNull(0))
+            {
+                results.Add(reader.GetString(0));
+            }
+        }
+
+        return results;
+    }
+
     private async Task EnsureTagsColumnAsync()
     {
         await using var connection = CreateConnection();
@@ -951,6 +999,31 @@ VALUES ($house_id, $price, $office, $last_updated_date, $added_date, $remark);";
         await using var alter = connection.CreateCommand();
         alter.CommandText = "ALTER TABLE house ADD COLUMN tags TEXT";
         await alter.ExecuteNonQueryAsync().ConfigureAwait(false);
+    }
+
+    private async Task EnsureDirectionColumnAsync()
+    {
+        await using var connection = CreateConnection();
+        await connection.OpenAsync().ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "PRAGMA table_info(house)";
+        await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
+        while (await reader.ReadAsync().ConfigureAwait(false))
+        {
+            var name = reader.GetString(1);
+            if (string.Equals(name, "direction", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+        }
+
+        await using var alter = connection.CreateCommand();
+        alter.CommandText = "ALTER TABLE house ADD COLUMN direction TEXT";
+        await alter.ExecuteNonQueryAsync().ConfigureAwait(false);
+
+        await using var update = connection.CreateCommand();
+        update.CommandText = "UPDATE house SET direction = '남향' WHERE direction IS NULL";
+        await update.ExecuteNonQueryAsync().ConfigureAwait(false);
     }
 
     private async Task EnsureClustersFromHousesAsync()

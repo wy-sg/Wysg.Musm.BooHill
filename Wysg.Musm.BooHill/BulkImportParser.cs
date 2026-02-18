@@ -16,9 +16,15 @@ public static class BulkImportParser
     
     // Pattern to match floor info: "1/12층" or "고/12층" or "중/12층" or "저/12층"
     private static readonly Regex FloorPattern = new(@"(\d+|고|중|저)/\d+층", RegexOptions.Compiled);
-    
-    // Pattern to match area: "재건축47평" or "24평"
+
+    // Pattern to match area from info lines only: "재건축47평" or "24평" but NOT "40평대"
+    // Requires ㎡ or 전용 context on the same line OR the area token followed by space/paren (not 대/형 etc.)
+    private static readonly Regex AreaInfoLinePattern = new(@"(?:재건축)?(\d+)(?:평|㎡)\s*\(", RegexOptions.Compiled);
+    // Fallback: used only on the same line that contains FloorPattern
     private static readonly Regex AreaPattern = new(@"(?:재건축)?(\d+)평", RegexOptions.Compiled);
+
+    // Pattern to match direction from floor info line: "중/36층남서향"
+    private static readonly Regex DirectionPattern = new(@"\d+층((?:남서|남동|북서|북동|동|서|남|북)향)", RegexOptions.Compiled);
     
     // Pattern to match price: "매매 18억" or "전세 2억" (but NOT "매매 18억 ~ 20억")
     private static readonly Regex PricePattern = new(@"^(매매|전세)\s+(.+)$", RegexOptions.Compiled);
@@ -96,7 +102,7 @@ public static class BulkImportParser
                     break;
                 }
 
-                // Parse unit number from floor info
+                // Parse unit number from floor info and direction
                 if (string.IsNullOrEmpty(house.UnitNumber))
                 {
                     var floorMatch = FloorPattern.Match(probe);
@@ -104,15 +110,32 @@ public static class BulkImportParser
                     {
                         house.UnitNumber = ParseUnitNumber(floorMatch.Groups[1].Value);
                         logs.Add($"  Floor at line {j + 1}: {probe} -> unit {house.UnitNumber}");
-                    }
-                }
 
-                // Parse area
-                var areaMatch = AreaPattern.Match(probe);
-                if (areaMatch.Success)
-                {
-                    house.Area = areaMatch.Groups[1].Value;
-                    logs.Add($"  Area at line {j + 1}: {house.Area}평");
+                        // Parse area from the same info line that has floor info (most reliable)
+                        var areaInfoMatch = AreaInfoLinePattern.Match(probe);
+                        if (areaInfoMatch.Success)
+                        {
+                            house.Area = areaInfoMatch.Groups[1].Value;
+                            logs.Add($"  Area at line {j + 1}: {house.Area}평 (info-line)");
+                        }
+                        else
+                        {
+                            var areaMatch = AreaPattern.Match(probe);
+                            if (areaMatch.Success)
+                            {
+                                house.Area = areaMatch.Groups[1].Value;
+                                logs.Add($"  Area at line {j + 1}: {house.Area}평 (fallback)");
+                            }
+                        }
+
+                        // Parse direction from the same floor info line
+                        var dirMatch = DirectionPattern.Match(probe);
+                        if (dirMatch.Success)
+                        {
+                            house.Direction = dirMatch.Groups[1].Value;
+                            logs.Add($"  Direction at line {j + 1}: {house.Direction}");
+                        }
+                    }
                 }
 
                 // Check for multi-item marker
@@ -514,6 +537,7 @@ public sealed class BulkParsedHouse
     public string BuildingNumber { get; set; } = string.Empty;
     public string UnitNumber { get; set; } = string.Empty;
     public string Area { get; set; } = "47";
+    public string Direction { get; set; } = string.Empty;
     public List<BulkParsedItem> Items { get; set; } = new();
     public bool IsDuplicate { get; set; }
     public string DuplicateReason { get; set; } = string.Empty;
@@ -524,7 +548,8 @@ public sealed class BulkParsedHouse
     {
         get
         {
-            var baseText = $"{(IsDuplicate ? "[DUP] " : string.Empty)}{ClusterName} {BuildingNumber}동 {UnitNumber} ({Area}평) - {Items.Count} items";
+            var dir = string.IsNullOrEmpty(Direction) ? string.Empty : $" {Direction}";
+            var baseText = $"{(IsDuplicate ? "[DUP] " : string.Empty)}{ClusterName} {BuildingNumber}동 {UnitNumber} ({Area}평{dir}) - {Items.Count} items";
             if (IsDuplicate && MatchedHouseId.HasValue)
             {
                 return $"{baseText} -> same as id={MatchedHouseId.Value}";

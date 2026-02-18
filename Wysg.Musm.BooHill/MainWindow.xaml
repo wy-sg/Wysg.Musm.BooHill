@@ -39,6 +39,8 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
@@ -81,6 +83,17 @@
                 </StackPanel>
 
                 <StackPanel Spacing="2" Grid.Column="4">
+                    <TextBlock Text="향" FontSize="12" />
+                    <Button x:Name="DirectionFilterButton" Content="전체" MinWidth="80">
+                        <Button.Flyout>
+                            <Flyout x:Name="DirectionFlyout" Closed="DirectionFlyout_Closed">
+                                <ListView x:Name="DirectionFilterList" SelectionMode="Multiple" MaxHeight="300" MinWidth="120" />
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
+
+                <StackPanel Spacing="2" Grid.Column="5">
                     <TextBlock Text="감평액" FontSize="12" />
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <TextBox x:Name="MinValueBox" PlaceholderText="최소" InputScope="Number" Width="60" />
@@ -89,7 +102,7 @@
                     </StackPanel>
                 </StackPanel>
 
-                <StackPanel Spacing="2" Grid.Column="5">
+                <StackPanel Spacing="2" Grid.Column="6">
                     <TextBlock Text="순위" FontSize="12" />
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <TextBox x:Name="MinRankBox" PlaceholderText="최소" InputScope="Number" Width="60" />
@@ -98,7 +111,7 @@
                     </StackPanel>
                 </StackPanel>
 
-                <StackPanel Spacing="2" Grid.Column="6">
+                <StackPanel Spacing="2" Grid.Column="7">
                     <TextBlock Text="태그" FontSize="12" />
                     <Button x:Name="TagFilterButton" Content="전체" MinWidth="80">
                         <Button.Flyout>
@@ -109,24 +122,31 @@
                     </Button>
                 </StackPanel>
 
-                <StackPanel Spacing="2" Grid.Column="7">
+                <StackPanel Spacing="2" Grid.Column="8">
                     <TextBlock Text="키워드" FontSize="12" />
                     <TextBox x:Name="RemarkTextBox" PlaceholderText="예: 급매" Width="100" />
                 </StackPanel>               
 
-                <StackPanel Spacing="4" Grid.Column="8" VerticalAlignment="Bottom">
+                <StackPanel Spacing="4" Grid.Column="9" VerticalAlignment="Bottom">
                     <CheckBox x:Name="FavoriteOnlyCheck" Content="관심" />
                 </StackPanel>
 
-                <StackPanel Spacing="4" Grid.Column="9" VerticalAlignment="Bottom">
+                <StackPanel Spacing="4" Grid.Column="10" VerticalAlignment="Bottom">
                     <CheckBox x:Name="ShowSoldCheck" Content="거래" />
                 </StackPanel>
 
-                <TextBlock x:Name="StatusText" Grid.Column="10" VerticalAlignment="Center" HorizontalAlignment="Right" />
-                
                 <StackPanel Spacing="8" Grid.Column="11" Orientation="Horizontal" VerticalAlignment="Bottom">
-                    <Button Content="적용" Click="ApplyFilters_Click" />
-                    <Button Content="초기화" Click="ClearFilters_Click" />
+                    <Button Content="필터 적용" Click="ApplyFilters_Click" />                    
+                </StackPanel>
+
+                <StackPanel Spacing="8" Grid.Column="12" Orientation="Horizontal" VerticalAlignment="Bottom">
+                    <TextBlock x:Name="StatusText" Grid.Column="12" VerticalAlignment="Center" HorizontalAlignment="Left" MinWidth="100" />
+                </StackPanel>
+
+                
+
+                <StackPanel Spacing="8" Grid.Column="13" Orientation="Horizontal" VerticalAlignment="Bottom">
+                    <Button Content="필터 초기화" Click="ClearFilters_Click" />
                 </StackPanel>
 
                
@@ -136,6 +156,7 @@
                 <Button x:Name="SortBuildingBtn" Content="동" MinWidth="50" Click="SortColumn_Click" Tag="Building" />
                 <Button x:Name="SortUnitBtn" Content="호수" MinWidth="50" Click="SortColumn_Click" Tag="Unit" />
                 <Button x:Name="SortAreaBtn" Content="평" MinWidth="50" Click="SortColumn_Click" Tag="Area" />
+                <Button x:Name="SortDirectionBtn" Content="향" MinWidth="50" Click="SortColumn_Click" Tag="Direction" />
                 <Button x:Name="SortFavoriteBtn" Content="관심" MinWidth="50" Click="SortColumn_Click" Tag="Favorite" />
                 <Button x:Name="SortOfficeBtn" Content="부동산" MinWidth="60" Click="SortColumn_Click" Tag="Office" />
                 <Button x:Name="SortPriceBtn" Content="가격 범위" MinWidth="80" Click="SortColumn_Click" Tag="PriceRange" />
@@ -155,6 +176,7 @@
                         <ColumnDefinition Width="120" />
                         <ColumnDefinition Width="120" />
                         <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="60" />
                         <ColumnDefinition Width="50" />
                         <ColumnDefinition Width="60" />
                         <ColumnDefinition Width="300" />
@@ -168,14 +190,15 @@
                     <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Text="동" FontWeight="SemiBold" />
                     <TextBlock Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center" Text="호수" FontWeight="SemiBold" />
                     <TextBlock Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Center" Text="평" FontWeight="SemiBold" />
-                    <TextBlock Grid.Column="4" VerticalAlignment="Center" HorizontalAlignment="Center" Text="관심" FontWeight="SemiBold" />
-                    <TextBlock Grid.Column="5" VerticalAlignment="Center" HorizontalAlignment="Center" Text="부동산" FontWeight="SemiBold" />
-                    <TextBlock Grid.Column="6" VerticalAlignment="Center" HorizontalAlignment="Center" Text="가격 범위" FontWeight="SemiBold" />
-                    <TextBlock Grid.Column="7" VerticalAlignment="Center" HorizontalAlignment="Center" Text="상태" FontWeight="SemiBold" />
-                    <TextBlock Grid.Column="8" VerticalAlignment="Center" HorizontalAlignment="Center" Text="감평액" FontWeight="SemiBold" />
-                    <TextBlock Grid.Column="9" VerticalAlignment="Center" HorizontalAlignment="Center" Text="순위" FontWeight="SemiBold" />
-                    <TextBlock Grid.Column="10" VerticalAlignment="Center" HorizontalAlignment="Center" Text="태그" FontWeight="SemiBold" />
-                    <TextBlock Grid.Column="11" VerticalAlignment="Center" HorizontalAlignment="Center" Text="거래 완료" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="4" VerticalAlignment="Center" HorizontalAlignment="Center" Text="향" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="5" VerticalAlignment="Center" HorizontalAlignment="Center" Text="관심" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="6" VerticalAlignment="Center" HorizontalAlignment="Center" Text="부동산" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="7" VerticalAlignment="Center" HorizontalAlignment="Center" Text="가격 범위" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="8" VerticalAlignment="Center" HorizontalAlignment="Center" Text="상태" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="9" VerticalAlignment="Center" HorizontalAlignment="Center" Text="감평액" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="10" VerticalAlignment="Center" HorizontalAlignment="Center" Text="순위" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="11" VerticalAlignment="Center" HorizontalAlignment="Center" Text="태그" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="12" VerticalAlignment="Center" HorizontalAlignment="Center" Text="거래 완료" FontWeight="SemiBold" />
                 </Grid>
 
                 <ScrollViewer Grid.Row="1">
@@ -190,6 +213,7 @@
                                             <ColumnDefinition Width="120" />
                                             <ColumnDefinition Width="120" />
                                             <ColumnDefinition Width="80" />
+                                            <ColumnDefinition Width="60" />
                                             <ColumnDefinition Width="50" />
                                             <ColumnDefinition Width="60" />
                                             <ColumnDefinition Width="300" />
@@ -203,17 +227,18 @@
                                             <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding BuildingNumber}" />
                                             <TextBlock Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding UnitNumber}" />
                                             <TextBlock Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding Area}" />
-                                            <Button Grid.Column="4" VerticalAlignment="Center" HorizontalAlignment="Center" Content="{Binding FavoriteGlyph}" Click="Favorite_Click" Tag="{Binding HouseId}" />
-                                            <TextBlock Grid.Column="5" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding OfficeGroupCount}" />
-                                            <TextBlock Grid.Column="6" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center" Text="{Binding PriceRange}" />
-                                            <StackPanel Grid.Column="7" VerticalAlignment="Center" HorizontalAlignment="Center" Orientation="Horizontal" Spacing="6">
+                                            <TextBlock Grid.Column="4" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding Direction}" />
+                                            <Button Grid.Column="5" VerticalAlignment="Center" HorizontalAlignment="Center" Content="{Binding FavoriteGlyph}" Click="Favorite_Click" Tag="{Binding HouseId}" />
+                                            <TextBlock Grid.Column="6" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding OfficeGroupCount}" />
+                                            <TextBlock Grid.Column="7" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center" Text="{Binding PriceRange}" />
+                                            <StackPanel Grid.Column="8" VerticalAlignment="Center" HorizontalAlignment="Center" Orientation="Horizontal" Spacing="6">
                                                 <TextBlock Text="{Binding StatusText}" Foreground="DodgerBlue" Visibility="{Binding HasStatusText, Converter={StaticResource BoolToVisibility}}" />
                                                 <Ellipse Width="10" Height="10" Fill="{Binding StatusCircleColor}" Visibility="{Binding ShowStatusCircle, Converter={StaticResource BoolToVisibility}}" />
                                             </StackPanel>
-                                            <TextBlock Grid.Column="8" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding ValueDisplay}" />
-                                            <TextBlock Grid.Column="9" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding RankDisplay}" />
-                                            <TextBlock Grid.Column="10" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding Tags}" TextTrimming="CharacterEllipsis" />
-                                            <Button Grid.Column="11" VerticalAlignment="Center" HorizontalAlignment="Center" Content="{Binding SoldGlyph}" Click="Sold_Click" Tag="{Binding HouseId}" />
+                                            <TextBlock Grid.Column="9" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding ValueDisplay}" />
+                                            <TextBlock Grid.Column="10" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding RankDisplay}" />
+                                            <TextBlock Grid.Column="11" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{Binding Tags}" TextTrimming="CharacterEllipsis" />
+                                            <Button Grid.Column="12" VerticalAlignment="Center" HorizontalAlignment="Center" Content="{Binding SoldGlyph}" Click="Sold_Click" Tag="{Binding HouseId}" />
                                         </Grid>
                                     </Expander.Header>
                                     <ItemsControl ItemsSource="{Binding ItemsForDisplayGroups}">

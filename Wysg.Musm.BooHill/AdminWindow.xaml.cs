@@ -590,6 +590,7 @@ public sealed class AdminWindow : Window
             BuildingNumber = house.BuildingNumber,
             UnitNumber = house.UnitNumber,
             Area = house.Area,
+            Direction = house.Direction,
             IsSold = house.IsSold,
             IsFavorite = house.IsFavorite,
             Value = house.Value,
@@ -842,6 +843,7 @@ public sealed class AdminWindow : Window
         var valueEstBox = new TextBox { Text = edit.ValueEstimate?.ToString(CultureInfo.InvariantCulture) ?? string.Empty, PlaceholderText = "Value Estimate" };
         var rankBox = new TextBox { Text = edit.Rank?.ToString(CultureInfo.InvariantCulture) ?? string.Empty, PlaceholderText = "Rank" };
         var rankEstBox = new TextBox { Text = edit.RankEstimate?.ToString(CultureInfo.InvariantCulture) ?? string.Empty, PlaceholderText = "Rank Estimate" };
+        var directionBox = new TextBox { Text = edit.Direction, PlaceholderText = "Direction" };
 
         var panel = new StackPanel { Spacing = 8 };
         panel.Children.Add(new TextBlock { Text = "Cluster" });
@@ -862,6 +864,8 @@ public sealed class AdminWindow : Window
         panel.Children.Add(rankBox);
         panel.Children.Add(new TextBlock { Text = "Rank Estimate" });
         panel.Children.Add(rankEstBox);
+        panel.Children.Add(new TextBlock { Text = "Direction" });
+        panel.Children.Add(directionBox);
 
         var dialog = new ContentDialog
         {
@@ -889,6 +893,7 @@ public sealed class AdminWindow : Window
         edit.ValueEstimate = TryParseDouble(valueEstBox.Text);
         edit.Rank = TryParseDouble(rankBox.Text);
         edit.RankEstimate = TryParseDouble(rankEstBox.Text);
+        edit.Direction = directionBox.Text.Trim();
 
         return true;
     }

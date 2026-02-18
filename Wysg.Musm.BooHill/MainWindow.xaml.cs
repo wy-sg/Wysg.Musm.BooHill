@@ -167,6 +167,8 @@ namespace Wysg.Musm.BooHill
 
             _currentFilters = new FilterOptions();
             UpdateSortButtonLabels();
+            await LoadClustersAsync();
+            await LoadFilterOptionsAsync();
             await LoadHousesAsync(_currentFilters);
         }
 

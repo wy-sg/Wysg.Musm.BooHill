@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Wysg.Musm.BooHill (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Wysg.Musm.BooHill (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

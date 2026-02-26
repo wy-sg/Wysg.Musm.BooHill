@@ -82,6 +82,9 @@
     <None Update="BulkImportWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>
+    <None Update="DailyLogWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
     <None Update="InfoWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>

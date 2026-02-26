@@ -190,6 +190,12 @@ namespace Wysg.Musm.BooHill
             window.Activate();
         }
 
+        private void OpenDailyLog_Click(object sender, RoutedEventArgs e)
+        {
+            var window = new DailyLogWindow();
+            window.Activate();
+        }
+
         private void OpenInfo_Click(object sender, RoutedEventArgs e)
         {
             var window = new InfoWindow();

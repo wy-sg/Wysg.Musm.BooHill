@@ -159,10 +159,13 @@ public sealed partial class BulkImportWindow : Window
                 continue;
             }
 
-            added += await repo.AddItemsAsync(dup.MatchedHouseId.Value, dup.Items, _today).ConfigureAwait(false);
+            var dupAdded = await repo.AddItemsAsync(dup.MatchedHouseId.Value, dup.Items, _today).ConfigureAwait(false);
+            added += dupAdded;
+            ImportLogger.LogImportDupHouse(dup, dupAdded);
         }
 
         _duplicatesImported += added;
+        ImportLogger.LogImportDuplicates(added, DuplicateHouses.Count);
         DispatcherQueue?.TryEnqueue(UpdateSummaryText);
     }
 
@@ -176,6 +179,7 @@ public sealed partial class BulkImportWindow : Window
         var repo = await BooHillRepository.CreateAsync().ConfigureAwait(false);
         var added = await repo.AddItemsAsync(_selectedSimilar.HouseId, _selectedHouse.Items, _today).ConfigureAwait(false);
         _mergedCount += added > 0 ? 1 : 0;
+        ImportLogger.LogMerge(_selectedHouse.Display, _selectedSimilar.HouseId, added, _selectedHouse.Items);
 
         ParsedHouses.Remove(_selectedHouse);
         SimilarHouses.Clear();
@@ -200,14 +204,16 @@ public sealed partial class BulkImportWindow : Window
         foreach (var house in ParsedHouses.ToList())
         {
             var clusterId = await repo.GetOrCreateClusterIdAsync(house.ClusterName).ConfigureAwait(false);
-            var newId = await repo.InsertHouseWithItemsAsync(house, _today, clusterId).ConfigureAwait(false);
+            var (newId, added) = await repo.InsertHouseWithItemsAsync(house, _today, clusterId).ConfigureAwait(false);
             insertedHouses++;
-            insertedItems += house.Items.Count;
+            insertedItems += added;
+            ImportLogger.LogInsertNewHouse(house, newId, added);
         }
 
         ParsedHouses.Clear();
         SelectedItems.Clear();
         _newInserted += insertedHouses;
+        ImportLogger.LogInsertNew(insertedHouses, insertedItems);
         DispatcherQueue?.TryEnqueue(UpdateSummaryText);
     }
 

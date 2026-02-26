@@ -28,6 +28,7 @@ public sealed class BooHillRepository
         await repo.EnsureAreaPatchedAsync();
         await repo.EnsureTagsColumnAsync();
         await repo.EnsureDirectionColumnAsync();
+        await repo.EnsureItemUniqueConstraintAsync();
         await repo.EnsureClustersFromHousesAsync();
         return repo;
     }
@@ -92,7 +93,8 @@ public sealed class BooHillRepository
                 office            TEXT,
                 last_updated_date TEXT,
                 added_date        TEXT,
-                remark            TEXT
+                remark            TEXT,
+                UNIQUE(house_id, price, office, last_updated_date, added_date, remark)
             );
             """;
         await command.ExecuteNonQueryAsync().ConfigureAwait(false);
@@ -771,27 +773,52 @@ VALUES ($house_id, $price, $office, $last_updated_date, $added_date, $remark);";
         return added;
     }
 
-    public async Task<long> InsertHouseWithItemsAsync(BulkParsedHouse house, string today, int clusterId = 1)
+    public async Task<(long HouseId, int ItemsAdded)> InsertHouseWithItemsAsync(BulkParsedHouse house, string today, int clusterId = 1)
     {
-        var houseEdit = new HouseEdit
-        {
-            HouseId = 0,
-            ClusterId = clusterId,
-            BuildingNumber = house.BuildingNumber,
-            UnitNumber = house.UnitNumber,
-            Area = house.Area,
-            Direction = house.Direction,
-            IsFavorite = false,
-            IsSold = false,
-            Value = null,
-            ValueEstimate = null,
-            Rank = null,
-            RankEstimate = null
-        };
+        await using var connection = CreateConnection();
+        await connection.OpenAsync().ConfigureAwait(false);
+        await using var transaction = (SqliteTransaction)await connection.BeginTransactionAsync().ConfigureAwait(false);
 
-        var newHouseId = await UpsertHouseAsync(houseEdit).ConfigureAwait(false);
-        await AddItemsAsync(newHouseId, house.Items, today).ConfigureAwait(false);
-        return newHouseId;
+        // Insert house
+        await using var houseCmd = connection.CreateCommand();
+        houseCmd.CommandText = @"INSERT INTO house (cluster_id, building_number, unit_number, area, is_sold, is_favorite, value, value_estm, rank, rank_estm, tags, direction)
+VALUES ($cluster_id, $building_number, $unit_number, $area, 0, 0, NULL, NULL, NULL, NULL, NULL, $direction);
+SELECT last_insert_rowid();";
+        houseCmd.Transaction = transaction;
+        houseCmd.Parameters.AddWithValue("$cluster_id", clusterId);
+        houseCmd.Parameters.AddWithValue("$building_number", (object?)house.BuildingNumber ?? DBNull.Value);
+        houseCmd.Parameters.AddWithValue("$unit_number", string.IsNullOrWhiteSpace(house.UnitNumber) ? DBNull.Value : house.UnitNumber);
+        houseCmd.Parameters.AddWithValue("$area", (object?)house.Area ?? DBNull.Value);
+        houseCmd.Parameters.AddWithValue("$direction", string.IsNullOrWhiteSpace(house.Direction) ? DBNull.Value : house.Direction);
+
+        var houseResult = await houseCmd.ExecuteScalarAsync().ConfigureAwait(false);
+        var newHouseId = Convert.ToInt64(houseResult, CultureInfo.InvariantCulture);
+
+        // Insert items in the same transaction
+        var itemCmd = connection.CreateCommand();
+        itemCmd.CommandText = @"INSERT OR IGNORE INTO item (house_id, price, office, last_updated_date, added_date, remark)
+VALUES ($house_id, $price, $office, $last_updated_date, $added_date, $remark);";
+        itemCmd.Transaction = transaction;
+        itemCmd.Parameters.AddWithValue("$house_id", newHouseId);
+        itemCmd.Parameters.Add("$price", SqliteType.Real);
+        itemCmd.Parameters.Add("$office", SqliteType.Text);
+        itemCmd.Parameters.Add("$last_updated_date", SqliteType.Text);
+        itemCmd.Parameters.Add("$added_date", SqliteType.Text);
+        itemCmd.Parameters.Add("$remark", SqliteType.Text);
+
+        var added = 0;
+        foreach (var item in house.Items)
+        {
+            itemCmd.Parameters["$price"].Value = DbValue(item.Price);
+            itemCmd.Parameters["$office"].Value = DbValue(item.Office);
+            itemCmd.Parameters["$last_updated_date"].Value = DbValue(item.LastUpdatedDate);
+            itemCmd.Parameters["$added_date"].Value = today;
+            itemCmd.Parameters["$remark"].Value = DbValue(item.Remark);
+            added += await itemCmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+        }
+
+        await transaction.CommitAsync().ConfigureAwait(false);
+        return (newHouseId, added);
     }
 
     private static string ItemKey(BulkParsedItem item, string addedDate)
@@ -1024,6 +1051,85 @@ VALUES ($house_id, $price, $office, $last_updated_date, $added_date, $remark);";
         await using var update = connection.CreateCommand();
         update.CommandText = "UPDATE house SET direction = '남향' WHERE direction IS NULL";
         await update.ExecuteNonQueryAsync().ConfigureAwait(false);
+    }
+
+    private async Task EnsureItemUniqueConstraintAsync()
+    {
+        await using var connection = CreateConnection();
+        await connection.OpenAsync().ConfigureAwait(false);
+
+        // Check whether the current unique index on item already includes house_id.
+        // PRAGMA index_list returns all indexes on the table.
+        var needsFix = false;
+        await using (var cmd = connection.CreateCommand())
+        {
+            cmd.CommandText = "PRAGMA index_list(item)";
+            await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+            while (await reader.ReadAsync().ConfigureAwait(false))
+            {
+                var idxName = reader.GetString(1);
+                var isUnique = reader.GetInt32(2) == 1;
+                if (!isUnique)
+                {
+                    continue;
+                }
+
+                // Check columns of this unique index
+                var hasHouseId = false;
+                await using var info = connection.CreateCommand();
+                info.CommandText = $"PRAGMA index_info('{idxName}')";
+                await using var infoReader = await info.ExecuteReaderAsync().ConfigureAwait(false);
+                while (await infoReader.ReadAsync().ConfigureAwait(false))
+                {
+                    var colName = infoReader.GetString(2);
+                    if (string.Equals(colName, "house_id", StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasHouseId = true;
+                    }
+                }
+
+                if (!hasHouseId)
+                {
+                    needsFix = true;
+                    break;
+                }
+            }
+        }
+
+        if (!needsFix)
+        {
+            return;
+        }
+
+        // Recreate the item table with the correct UNIQUE constraint including house_id.
+        await using var transaction = (SqliteTransaction)await connection.BeginTransactionAsync().ConfigureAwait(false);
+
+        await using (var step = connection.CreateCommand())
+        {
+            step.Transaction = transaction;
+            step.CommandText = """
+                CREATE TABLE IF NOT EXISTS item_new (
+                    item_id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                    house_id          INTEGER,
+                    price             REAL,
+                    office            TEXT,
+                    last_updated_date TEXT,
+                    added_date        TEXT,
+                    remark            TEXT,
+                    UNIQUE(house_id, price, office, last_updated_date, added_date, remark)
+                );
+
+                INSERT INTO item_new (item_id, house_id, price, office, last_updated_date, added_date, remark)
+                SELECT item_id, house_id, price, office, last_updated_date, added_date, remark FROM item;
+
+                DROP TABLE item;
+
+                ALTER TABLE item_new RENAME TO item;
+                """;
+            await step.ExecuteNonQueryAsync().ConfigureAwait(false);
+        }
+
+        await transaction.CommitAsync().ConfigureAwait(false);
     }
 
     private async Task EnsureClustersFromHousesAsync()

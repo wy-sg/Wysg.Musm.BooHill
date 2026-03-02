@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using System;
@@ -22,9 +23,19 @@ public sealed partial class DailyLogWindow : Window
     private TextBlock? _mergeDetailText;
     private TextBlock? _newCountText;
     private TextBlock? _newDetailText;
+    private TextBlock? _errorCountText;
+    private TextBlock? _errorDetailText;
     private TextBlock? _totalLinesText;
     private ListView? _logEntryList;
     private TextBlock? _emptyText;
+    private Border? _parseCard;
+    private Border? _dupCard;
+    private Border? _mergeCard;
+    private Border? _newCard;
+    private Border? _errorCard;
+
+    private readonly List<LogEntryViewModel> _allEntries = new();
+    private readonly HashSet<string> _activeFilters = new();
 
     public ObservableCollection<LogEntryViewModel> Entries { get; } = new();
 
@@ -54,9 +65,16 @@ public sealed partial class DailyLogWindow : Window
         _mergeDetailText = root?.FindName("MergeDetailText") as TextBlock;
         _newCountText = root?.FindName("NewCountText") as TextBlock;
         _newDetailText = root?.FindName("NewDetailText") as TextBlock;
+        _errorCountText = root?.FindName("ErrorCountText") as TextBlock;
+        _errorDetailText = root?.FindName("ErrorDetailText") as TextBlock;
         _totalLinesText = root?.FindName("TotalLinesText") as TextBlock;
         _logEntryList = root?.FindName("LogEntryList") as ListView;
         _emptyText = root?.FindName("EmptyText") as TextBlock;
+        _parseCard = root?.FindName("ParseCard") as Border;
+        _dupCard = root?.FindName("DupCard") as Border;
+        _mergeCard = root?.FindName("MergeCard") as Border;
+        _newCard = root?.FindName("NewCard") as Border;
+        _errorCard = root?.FindName("ErrorCard") as Border;
 
         if (_logEntryList != null)
         {
@@ -67,6 +85,8 @@ public sealed partial class DailyLogWindow : Window
     private async void DatePicker_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
     {
         Entries.Clear();
+        _allEntries.Clear();
+        _activeFilters.Clear();
 
         if (args.NewDate is not DateTimeOffset selected)
         {
@@ -84,12 +104,15 @@ public sealed partial class DailyLogWindow : Window
     private void PopulateEntries(List<string> lines)
     {
         Entries.Clear();
+        _allEntries.Clear();
+        _activeFilters.Clear();
 
         if (lines.Count == 0)
         {
             if (_summaryGrid != null) _summaryGrid.Visibility = Visibility.Collapsed;
             if (_emptyText != null) { _emptyText.Text = "해당 날짜에 로그가 없습니다"; _emptyText.Visibility = Visibility.Visible; }
             if (_totalLinesText != null) _totalLinesText.Text = string.Empty;
+            UpdateCardVisuals();
             return;
         }
 
@@ -107,6 +130,7 @@ public sealed partial class DailyLogWindow : Window
         var newCount = 0;
         var newHouses = 0;
         var newItems = 0;
+        var errorCount = 0;
 
         foreach (var line in lines)
         {
@@ -117,7 +141,7 @@ public sealed partial class DailyLogWindow : Window
             }
 
             var vm = new LogEntryViewModel(entry);
-            Entries.Add(vm);
+            _allEntries.Add(vm);
 
             switch (entry.Action)
             {
@@ -134,6 +158,7 @@ public sealed partial class DailyLogWindow : Window
                 case "INSERT_NEW": newCount++; break;
                 case "INSERT_NEW_HOUSE": newHouses++; break;
                 case "INSERT_NEW_ITEM": newItems++; break;
+                case "ERROR": errorCount++; break;
             }
         }
 
@@ -145,8 +170,73 @@ public sealed partial class DailyLogWindow : Window
         if (_mergeDetailText != null) _mergeDetailText.Text = $"매물 {mergeItems}";
         if (_newCountText != null) _newCountText.Text = $"{newCount}건";
         if (_newDetailText != null) _newDetailText.Text = $"주택 {newHouses} · 매물 {newItems}";
-        if (_totalLinesText != null) _totalLinesText.Text = $"총 {Entries.Count}줄";
+        if (_errorCountText != null) _errorCountText.Text = $"{errorCount}건";
+
+        ApplyFilter();
+        UpdateCardVisuals();
     }
+
+    private void ApplyFilter()
+    {
+        Entries.Clear();
+        foreach (var entry in _allEntries)
+        {
+            if (_activeFilters.Count == 0 || _activeFilters.Contains(GetCategory(entry.Action) ?? ""))
+            {
+                Entries.Add(entry);
+            }
+        }
+
+        if (_totalLinesText != null)
+        {
+            _totalLinesText.Text = _activeFilters.Count > 0
+                ? $"{Entries.Count}줄 / 총 {_allEntries.Count}줄"
+                : $"총 {_allEntries.Count}줄";
+        }
+    }
+
+    private void ToggleFilter(string category)
+    {
+        if (!_activeFilters.Remove(category))
+        {
+            _activeFilters.Add(category);
+        }
+
+        ApplyFilter();
+        UpdateCardVisuals();
+    }
+
+    private void UpdateCardVisuals()
+    {
+        var anyActive = _activeFilters.Count > 0;
+        SetCardOpacity(_parseCard, anyActive, _activeFilters.Contains("PARSE"));
+        SetCardOpacity(_dupCard, anyActive, _activeFilters.Contains("IMPORT_DUP"));
+        SetCardOpacity(_mergeCard, anyActive, _activeFilters.Contains("MERGE"));
+        SetCardOpacity(_newCard, anyActive, _activeFilters.Contains("INSERT_NEW"));
+        SetCardOpacity(_errorCard, anyActive, _activeFilters.Contains("ERROR"));
+    }
+
+    private static void SetCardOpacity(Border? card, bool anyActive, bool isActive)
+    {
+        if (card == null) return;
+        card.Opacity = anyActive && !isActive ? 0.35 : 1.0;
+    }
+
+    private static string? GetCategory(string action) => action switch
+    {
+        "PARSE" or "PARSE_HOUSE" or "PARSE_ITEM" or "PARSE_DUP" or "PARSE_DUP_ITEM" => "PARSE",
+        "IMPORT_DUP" or "IMPORT_DUP_HOUSE" or "IMPORT_DUP_ITEM" => "IMPORT_DUP",
+        "MERGE" or "MERGE_ITEM" => "MERGE",
+        "INSERT_NEW" or "INSERT_NEW_HOUSE" or "INSERT_NEW_ITEM" => "INSERT_NEW",
+        "ERROR" => "ERROR",
+        _ => null
+    };
+
+    private void ParseCard_Tapped(object sender, TappedRoutedEventArgs e) => ToggleFilter("PARSE");
+    private void DupCard_Tapped(object sender, TappedRoutedEventArgs e) => ToggleFilter("IMPORT_DUP");
+    private void MergeCard_Tapped(object sender, TappedRoutedEventArgs e) => ToggleFilter("MERGE");
+    private void NewCard_Tapped(object sender, TappedRoutedEventArgs e) => ToggleFilter("INSERT_NEW");
+    private void ErrorCard_Tapped(object sender, TappedRoutedEventArgs e) => ToggleFilter("ERROR");
 
     private void SetFixedSize(int width, int height)
     {
@@ -201,6 +291,7 @@ public sealed class LogEntryViewModel
             "INSERT_NEW" => ("🏠 새 주택", "#F3E5F5"),
             "INSERT_NEW_HOUSE" => ("  🏘 주택", "#E1BEE7"),
             "INSERT_NEW_ITEM" => ("    📄 매물", "#F3E5F5"),
+            "ERROR" => ("⚠️ 오류", "#FFEBEE"),
             _ => (entry.Action, "Transparent")
         };
     }

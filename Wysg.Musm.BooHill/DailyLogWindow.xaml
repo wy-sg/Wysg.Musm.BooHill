@@ -29,10 +29,11 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
             <!-- PARSE card -->
-            <Border Background="#E3F2FD" CornerRadius="12" Padding="16" MinHeight="120">
+            <Border x:Name="ParseCard" Background="#E3F2FD" CornerRadius="12" Padding="16" MinHeight="120" Tapped="ParseCard_Tapped">
                 <StackPanel Spacing="2" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock Text="🔍" FontSize="28" HorizontalAlignment="Center" />
                     <TextBlock Text="파싱" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" />
@@ -42,7 +43,7 @@
             </Border>
 
             <!-- IMPORT_DUP card -->
-            <Border Grid.Column="1" Background="#FFF3E0" CornerRadius="12" Padding="16" MinHeight="120">
+            <Border x:Name="DupCard" Grid.Column="1" Background="#FFF3E0" CornerRadius="12" Padding="16" MinHeight="120" Tapped="DupCard_Tapped">
                 <StackPanel Spacing="2" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock Text="📥" FontSize="28" HorizontalAlignment="Center" />
                     <TextBlock Text="중복 가져오기" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" />
@@ -52,7 +53,7 @@
             </Border>
 
             <!-- MERGE card -->
-            <Border Grid.Column="2" Background="#E8F5E9" CornerRadius="12" Padding="16" MinHeight="120">
+            <Border x:Name="MergeCard" Grid.Column="2" Background="#E8F5E9" CornerRadius="12" Padding="16" MinHeight="120" Tapped="MergeCard_Tapped">
                 <StackPanel Spacing="2" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock Text="🔗" FontSize="28" HorizontalAlignment="Center" />
                     <TextBlock Text="합치기" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" />
@@ -62,12 +63,22 @@
             </Border>
 
             <!-- INSERT_NEW card -->
-            <Border Grid.Column="3" Background="#F3E5F5" CornerRadius="12" Padding="16" MinHeight="120">
+            <Border x:Name="NewCard" Grid.Column="3" Background="#F3E5F5" CornerRadius="12" Padding="16" MinHeight="120" Tapped="NewCard_Tapped">
                 <StackPanel Spacing="2" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock Text="🏠" FontSize="28" HorizontalAlignment="Center" />
                     <TextBlock Text="새 주택" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" />
                     <TextBlock x:Name="NewCountText" Text="0건" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" Foreground="#6A1B9A" />
                     <TextBlock x:Name="NewDetailText" Text="" FontSize="11" HorizontalAlignment="Center" Foreground="#AB47BC" TextAlignment="Center" />
+                </StackPanel>
+            </Border>
+
+            <!-- ERROR card -->
+            <Border x:Name="ErrorCard" Grid.Column="4" Background="#FFEBEE" CornerRadius="12" Padding="16" MinHeight="120" Tapped="ErrorCard_Tapped">
+                <StackPanel Spacing="2" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Text="⚠️" FontSize="28" HorizontalAlignment="Center" />
+                    <TextBlock Text="오류" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                    <TextBlock x:Name="ErrorCountText" Text="0건" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" Foreground="#C62828" />
+                    <TextBlock x:Name="ErrorDetailText" Text="" FontSize="11" HorizontalAlignment="Center" Foreground="#EF5350" TextAlignment="Center" />
                 </StackPanel>
             </Border>
         </Grid>

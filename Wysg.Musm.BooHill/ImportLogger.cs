@@ -99,6 +99,14 @@ public static class ImportLogger
         }
     }
 
+    // ── Error ────────────────────────────────────────────────
+
+    /// <summary>Log an error that occurred during import.</summary>
+    public static void LogError(string context, string message)
+    {
+        Append($"ERROR | [{context}] {message}");
+    }
+
     // ── Read / Parse ─────────────────────────────────────────
 
     /// <summary>Read all lines from a daily log file. Returns empty list if the file does not exist.</summary>

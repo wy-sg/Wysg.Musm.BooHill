@@ -119,7 +119,10 @@ public sealed partial class BulkImportWindow : Window
     private static bool HasSharedItem(IEnumerable<BulkParsedItem> parsedItems, IEnumerable<ItemRecord> existingItems)
     {
         var existingKeys = new HashSet<string>(existingItems.Select(ItemKey), StringComparer.OrdinalIgnoreCase);
-        return parsedItems.Any(pi => existingKeys.Contains(ItemKey(pi)));
+        var existingRemarklessKeys = new HashSet<string>(existingItems.Select(RemarklessItemKey), StringComparer.OrdinalIgnoreCase);
+        return parsedItems.Any(pi =>
+            existingKeys.Contains(ItemKey(pi))
+            || (string.IsNullOrWhiteSpace(pi.Remark) && existingRemarklessKeys.Contains(RemarklessItemKey(pi))));
     }
 
     private static string NormalizeUnit(string? unit)
@@ -143,6 +146,20 @@ public sealed partial class BulkImportWindow : Window
         return $"{price}|{office}|{remark}";
     }
 
+    private static string RemarklessItemKey(BulkParsedItem item)
+    {
+        var price = item.Price?.ToString("G17", CultureInfo.InvariantCulture) ?? "<null>";
+        var office = item.Office?.Trim() ?? "<null>";
+        return $"{price}|{office}";
+    }
+
+    private static string RemarklessItemKey(ItemRecord item)
+    {
+        var price = item.Price?.ToString("G17", CultureInfo.InvariantCulture) ?? "<null>";
+        var office = item.Office?.Trim() ?? "<null>";
+        return $"{price}|{office}";
+    }
+
     private async void ImportDuplicates_Click(object sender, RoutedEventArgs e)
     {
         if (DuplicateHouses.Count == 0)
@@ -159,9 +176,16 @@ public sealed partial class BulkImportWindow : Window
                 continue;
             }
 
-            var dupAdded = await repo.AddItemsAsync(dup.MatchedHouseId.Value, dup.Items, _today).ConfigureAwait(false);
-            added += dupAdded;
-            ImportLogger.LogImportDupHouse(dup, dupAdded);
+            try
+            {
+                var dupAdded = await repo.AddItemsAsync(dup.MatchedHouseId.Value, dup.Items, _today).ConfigureAwait(false);
+                added += dupAdded;
+                ImportLogger.LogImportDupHouse(dup, dupAdded);
+            }
+            catch (Exception ex)
+            {
+                ImportLogger.LogError("중복 가져오기", $"{dup.Display}: {ex.Message}");
+            }
         }
 
         _duplicatesImported += added;
@@ -176,16 +200,23 @@ public sealed partial class BulkImportWindow : Window
             return;
         }
 
-        var repo = await BooHillRepository.CreateAsync().ConfigureAwait(false);
-        var added = await repo.AddItemsAsync(_selectedSimilar.HouseId, _selectedHouse.Items, _today).ConfigureAwait(false);
-        _mergedCount += added > 0 ? 1 : 0;
-        ImportLogger.LogMerge(_selectedHouse.Display, _selectedSimilar.HouseId, added, _selectedHouse.Items);
+        try
+        {
+            var repo = await BooHillRepository.CreateAsync().ConfigureAwait(false);
+            var added = await repo.AddItemsAsync(_selectedSimilar.HouseId, _selectedHouse.Items, _today).ConfigureAwait(false);
+            _mergedCount += added > 0 ? 1 : 0;
+            ImportLogger.LogMerge(_selectedHouse.Display, _selectedSimilar.HouseId, added, _selectedHouse.Items);
 
-        ParsedHouses.Remove(_selectedHouse);
-        SimilarHouses.Clear();
-        _selectedSimilar = null;
-        _selectedHouse = null;
-        SelectedItems.Clear();
+            ParsedHouses.Remove(_selectedHouse);
+            SimilarHouses.Clear();
+            _selectedSimilar = null;
+            _selectedHouse = null;
+            SelectedItems.Clear();
+        }
+        catch (Exception ex)
+        {
+            ImportLogger.LogError("합치기", $"{_selectedHouse.Display}: {ex.Message}");
+        }
 
         DispatcherQueue?.TryEnqueue(UpdateSummaryText);
     }
@@ -203,11 +234,18 @@ public sealed partial class BulkImportWindow : Window
 
         foreach (var house in ParsedHouses.ToList())
         {
-            var clusterId = await repo.GetOrCreateClusterIdAsync(house.ClusterName).ConfigureAwait(false);
-            var (newId, added) = await repo.InsertHouseWithItemsAsync(house, _today, clusterId).ConfigureAwait(false);
-            insertedHouses++;
-            insertedItems += added;
-            ImportLogger.LogInsertNewHouse(house, newId, added);
+            try
+            {
+                var clusterId = await repo.GetOrCreateClusterIdAsync(house.ClusterName).ConfigureAwait(false);
+                var (newId, added) = await repo.InsertHouseWithItemsAsync(house, _today, clusterId).ConfigureAwait(false);
+                insertedHouses++;
+                insertedItems += added;
+                ImportLogger.LogInsertNewHouse(house, newId, added);
+            }
+            catch (Exception ex)
+            {
+                ImportLogger.LogError("새 매물 가져오기", $"{house.Display}: {ex.Message}");
+            }
         }
 
         ParsedHouses.Clear();

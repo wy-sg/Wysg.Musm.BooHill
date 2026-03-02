@@ -11,7 +11,7 @@
   <Identity
     Name="05f8d358-2d86-45dc-af39-90bb70ec1824"
     Publisher="CN=wysg"
-    Version="1.0.1.0" />
+    Version="1.0.2.0" />
 
   <mp:PhoneIdentity PhoneProductId="05f8d358-2d86-45dc-af39-90bb70ec1824" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
